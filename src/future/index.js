@@ -1,7 +1,5 @@
 import React from "react";
 
-// type Fetcher = <T>(...args: Array<any>) => Promise<T>;
-
 export const createFetcher = fetcher => {
   let cache = {};
   return {
@@ -56,7 +54,7 @@ export class DeferredState extends React.Component {
           pendingChildrenState: undefined
         });
       });
-      // use render with current state or give up and return null
+      // render with current state or give up and return null
       return currentChildrenState
         ? children(currentChildrenState, this.deferSetState)
         : null;
