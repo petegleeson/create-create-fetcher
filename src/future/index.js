@@ -15,72 +15,51 @@ export const createFetcher = fetcher => {
   };
 };
 
+// steps:
+// 1. render state A
+// 2. deferSetState called with A'
+// 3. render state A'
+// 4. catch error from A' render
+// 5. render state A
+// 6. data for A' resolves
+// 7. render state A'
 export class DeferredState extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { childrenState: props.state };
+    this.state = {
+      currentChildrenState: undefined,
+      pendingChildrenState: props.defaultState
+    };
   }
 
-  componentDidCatch(error) {
-    // Display fallback UI
-    error.then(() =>
-      this.setState({
-        childrenState: this.state.pendingChildrenState,
-        pendingChildrenState: undefined
-      })
-    );
-  }
-
-  deferSetState(childrenState) {
-    this.setState({ pendingChildrenState: childrenState });
-  }
+  // arrow function is important
+  deferSetState = pendingChildrenState =>
+    this.setState({
+      pendingChildrenState
+    });
 
   render() {
-    const { childrenState } = this.state;
-    return this.props.children(this.state.childrenState, this.deferSetState);
+    const { children } = this.props;
+    const { currentChildrenState, pendingChildrenState } = this.state;
+    try {
+      // always try render with pending state if we have one
+      return children(
+        pendingChildrenState || currentChildrenState,
+        this.deferSetState
+      );
+    } catch (fetcher) {
+      // tried to render before data available,
+      // when the fetch resolves, commit pending children state
+      fetcher.then(() => {
+        this.setState({
+          currentChildrenState: this.state.pendingChildrenState,
+          pendingChildrenState: undefined
+        });
+      });
+      // use render with current state or give up and return null
+      return currentChildrenState
+        ? children(currentChildrenState, this.deferSetState)
+        : null;
+    }
   }
 }
-
-// ASYNC HOC
-// read always throws with fetcher and args,
-// async component catches and exectues fetcher,
-// re-renders once fetcher has resolved
-
-// problem is how does 'read' now know that the
-// promise is resolved?
-
-export class Defer extends React.Component {
-  constructor(props) {
-    super(props);
-    this.state = { isFetching: false };
-  }
-
-  componentDidCatch(error) {
-    // Display fallback UI
-    this.setState({ isFetching: true });
-    error.then(() => this.setState({ isFetching: false }));
-  }
-
-  render() {
-    return this.state.isFetching ? null : this.props.children;
-  }
-}
-
-// ASYNC COMPONENT
-
-// type Props = {
-//   createFetcher: Fetcher,
-//   children: <T>(value: T) => Node
-// };
-
-// type State = {
-//   loaded: boolean
-// };
-
-// export class Async extends React.Component<Props, State> {
-//   componentDidMount() {
-//     if (!this.state.loaded) {
-//     }
-//   }
-//   render() {}
-// }

@@ -1,32 +1,37 @@
 import React, { Fragment } from "react";
-import { createFetcher } from "../future";
+import { createFetcher, DeferredState } from "../future";
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const characterFetcher = createFetcher(page =>
-  fetch(`https://swapi.co/api/people/?page=${page}`).then(resp => resp.json())
+  delay(1000)
+    .then(() => fetch(`https://swapi.co/api/people/?page=${page}`))
+    .then(resp => resp.json())
 );
 
-class CharacterList extends React.Component {
-  constructor() {
-    super();
-    this.state = { page: 1 };
-  }
-
-  render() {
-    const { page } = this.state;
-    const { results } = characterFetcher.read(page);
-    return (
-      <Fragment>
-        <ul>{results.map(({ name }) => <li key={name}>{name}</li>)}</ul>
-        <button
-          disabled={page === 1}
-          onClick={() => this.setState({ page: page - 1 })}
-        >
-          Previous
-        </button>
-        <button onClick={() => this.setState({ page: page + 1 })}>Next</button>
-      </Fragment>
-    );
-  }
-}
+const CharacterList = () => (
+  <DeferredState defaultState={{ page: 1 }}>
+    {({ page }, deferSetState) => {
+      const { results, next, previous } = characterFetcher.read(page);
+      return (
+        <Fragment>
+          <ul>{results.map(({ name }) => <li key={name}>{name}</li>)}</ul>
+          <button
+            disabled={!previous}
+            onClick={() => deferSetState({ page: page - 1 })}
+          >
+            Previous page
+          </button>
+          <button
+            disabled={!next}
+            onClick={() => deferSetState({ page: page + 1 })}
+          >
+            Next page
+          </button>
+        </Fragment>
+      );
+    }}
+  </DeferredState>
+);
 
 export default CharacterList;
