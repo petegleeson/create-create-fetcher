@@ -1,6 +1,6 @@
 # Create createFetcher
 
-An attempt to mimic the `createFetcher` API with React 16.2.
+An attempt to mimic [Suspense](https://reactjs.org/blog/2018/03/01/sneak-peek-beyond-react-16.html) with React 16.2.
 
 ## Why
 
@@ -19,25 +19,19 @@ const characterFetcher = createFetcher(page =>
     .then(resp => resp.json())
 );
 
-const CharacterList = () => (
-  <DeferredState defaultState={{ page: 1 }}>
+export const PaginatedCharacterList = () => (
+  <DeferredState initialState={{ page: 1 }}>
     {({ page }, deferSetState) => {
       const { results, next, previous } = characterFetcher.read(page);
       return (
         <Fragment>
-          <ul>{results.map(({ name }) => <li key={name}>{name}</li>)}</ul>
-          <button
-            disabled={!previous}
-            onClick={() => deferSetState({ page: page - 1 })}
-          >
-            Previous page
-          </button>
-          <button
-            disabled={!next}
-            onClick={() => deferSetState({ page: page + 1 })}
-          >
-            Next page
-          </button>
+          <List characters={results} />
+          <Pagination
+            hasPrevious={previous}
+            hasNext={next}
+            onPrevious={() => deferSetState({ page: page - 1 })}
+            onNext={() => deferSetState({ page: page + 1 })}
+          />
         </Fragment>
       );
     }}

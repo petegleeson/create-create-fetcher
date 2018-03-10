@@ -13,6 +13,17 @@ export const createFetcher = fetcher => {
   };
 };
 
+export class Loading extends React.Component {
+  state = { isLoading: false };
+  componentDidCatch(fetcher) {
+    fetcher.then(() => this.setState({ isLoading: false }));
+    this.setState({ isLoading: true });
+  }
+  render() {
+    return this.props.children(this.state.isLoading);
+  }
+}
+
 // steps:
 // 1. render state A
 // 2. deferSetState called with A'
@@ -26,7 +37,7 @@ export class DeferredState extends React.Component {
     super(props);
     this.state = {
       currentChildrenState: undefined,
-      pendingChildrenState: props.defaultState
+      pendingChildrenState: props.initialState
     };
   }
 
