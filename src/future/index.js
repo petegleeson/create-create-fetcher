@@ -72,3 +72,35 @@ export class DeferredState extends React.Component {
     }
   }
 }
+
+
+const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+export class Placeholder extends React.Component {
+  state = { showPlaceholder: false, loaded: false, error: false };
+
+  componentDidCatch(fetcher) {
+    fetcher.then(() => this.setState({
+      loaded: true,
+    }));
+    this.setState({ error: true });
+  }
+
+  componentDidMount() {
+    delay(this.props.delayMs).then(() =>
+      this.setState({ showPlaceholder: true })
+    );
+  }
+
+
+  render() {
+    const { loaded, showPlaceholder, error } = this.state;
+
+    if (loaded || !error) {
+      return this.props.children;
+    } else if (showPlaceholder) {
+      return this.props.fallback;
+    }
+    return null;
+  }
+}

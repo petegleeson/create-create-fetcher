@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import { Loading } from "./future";
+import { Loading, Placeholder } from "./future";
 import {
   CharacterList,
   PaginatedCharacterList
@@ -25,6 +25,12 @@ class App extends Component {
 //   <Loading>
 //     {isLoading => (isLoading ? "Loading..." : <CharacterList page={1} />)}
 //   </Loading>
+// );
+
+// const App = () => (
+//   <Placeholder delayMs={500} fallback={<div>Waiting for data</div>}>
+//     <CharacterList page={1} />
+//   </Placeholder>
 // );
 
 export default App;
