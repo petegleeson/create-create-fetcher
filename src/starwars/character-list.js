@@ -1,5 +1,6 @@
 import React, { Fragment } from "react";
 import { createFetcher, DeferredState } from "../future";
+import Counter from "../counter";
 
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -29,21 +30,26 @@ const Pagination = ({ hasPrevious, hasNext, onPrevious, onNext }) => (
   </Fragment>
 );
 
+const CharacterListWithCounter = ({ page, deferSetState }) => {
+  const { results, next, previous } = characterFetcher.read(page);
+  return (
+    <Fragment>
+      <Counter />
+      <List characters={results} />
+      <Pagination
+        hasPrevious={previous}
+        hasNext={next}
+        onPrevious={() => deferSetState({ page: page - 1 })}
+        onNext={() => deferSetState({ page: page + 1 })}
+      />
+    </Fragment>
+  );
+};
+
 export const PaginatedCharacterList = () => (
   <DeferredState initialState={{ page: 1 }}>
-    {({ page }, deferSetState) => {
-      const { results, next, previous } = characterFetcher.read(page);
-      return (
-        <Fragment>
-          <List characters={results} />
-          <Pagination
-            hasPrevious={previous}
-            hasNext={next}
-            onPrevious={() => deferSetState({ page: page - 1 })}
-            onNext={() => deferSetState({ page: page + 1 })}
-          />
-        </Fragment>
-      );
-    }}
+    {({ page }, deferSetState) => (
+      <CharacterListWithCounter page={page} deferSetState={deferSetState} />
+    )}
   </DeferredState>
 );

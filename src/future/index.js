@@ -37,8 +37,26 @@ export class DeferredState extends React.Component {
     super(props);
     this.state = {
       currentChildrenState: undefined,
-      pendingChildrenState: props.initialState
+      pendingChildrenState: props.initialState,
+      fetcherHasThrown: false
     };
+  }
+
+  updateWhenfetcherResolves(fetcher) {
+    // tried to render before data available,
+    // when the fetch resolves, commit pending children state
+    fetcher.then(() => {
+      this.setState({
+        currentChildrenState: this.state.pendingChildrenState,
+        pendingChildrenState: undefined,
+        fetcherHasThrown: false
+      });
+    });
+  }
+
+  componentDidCatch(fetcher) {
+    this.updateWhenfetcherResolves(fetcher);
+    this.setState({ fetcherHasThrown: true });
   }
 
   // arrow function is important
@@ -49,26 +67,27 @@ export class DeferredState extends React.Component {
 
   render() {
     const { children } = this.props;
-    const { currentChildrenState, pendingChildrenState } = this.state;
-    try {
-      // always try render with pending state if we have one
-      return children(
+    const {
+      currentChildrenState,
+      pendingChildrenState,
+      fetcherHasThrown
+    } = this.state;
+    // always try render with pending state if we have one
+    const renderPendingState = () =>
+      children(
         pendingChildrenState || currentChildrenState,
         this.deferSetState
       );
-    } catch (fetcher) {
-      // tried to render before data available,
-      // when the fetch resolves, commit pending children state
-      fetcher.then(() => {
-        this.setState({
-          currentChildrenState: this.state.pendingChildrenState,
-          pendingChildrenState: undefined
-        });
-      });
-      // render with current state or give up and return null
-      return currentChildrenState
+    // render with current state or give up and return null
+    const renderCurrentState = () =>
+      currentChildrenState
         ? children(currentChildrenState, this.deferSetState)
         : null;
+    try {
+      return !fetcherHasThrown ? renderPendingState() : renderCurrentState();
+    } catch (fetcher) {
+      this.updateWhenfetcherResolves(fetcher);
+      return renderCurrentState();
     }
   }
 }
